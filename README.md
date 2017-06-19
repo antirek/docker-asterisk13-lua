@@ -1,2 +1,2 @@
-# docker-asterisk13-lua
-docker asterisk13 lua image
+asterisk 13
+lua 5.1
