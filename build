@@ -1,1 +1,1 @@
-docker build -t antirek/asterisk13-lua --rm=true .
+docker build -t antirek/asterisk13-lua-1 --rm=true .
