@@ -88,7 +88,7 @@ RUN mkdir /tmp/luamongo && \
 ## Install luarocks
 
 RUN mkdir /tmp/luarocks && \
-    curl -sf -o /tmp/luarocks.tar.gz -L http://luarocks.org/releases/luarocks-2.2.1.tar.gz && \
+    curl -sf -o /tmp/luarocks.tar.gz -L http://luarocks.org/releases/luarocks-2.4.3.tar.gz && \
     tar -zxf /tmp/luarocks.tar.gz -C /tmp/luarocks --strip-components=1 && \
     cd /tmp/luarocks && \
     ./configure && \
