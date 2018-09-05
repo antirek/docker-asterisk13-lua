@@ -38,7 +38,7 @@ RUN curl -sf \
     contrib/scripts/install_prereq install
 
 RUN cd /tmp/asterisk && \
-    ./configure --with-pjproject-bundled PJPROJECT_URL=http://developer.mobilon.ru/pjproject2
+    ./configure --with-pjproject-bundled
 
 RUN cd /tmp/asterisk && \
     make menuselect.makeopts && \
