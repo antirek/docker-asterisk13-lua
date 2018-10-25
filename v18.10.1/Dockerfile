@@ -37,15 +37,12 @@ RUN curl -sf \
     cd /tmp/asterisk && \
     contrib/scripts/install_prereq install
 
-
-RUN cat /tmp/asterisk/third-party/Makefile.rules
-
-RUN sed -i 's/DOWNLOAD_TIMEOUT,5/20,5/g' /tmp/asterisk/third-party/Makefile.rules
-
-RUN cat /tmp/asterisk/third-party/Makefile.rules
+### RUN sed -i 's/DOWNLOAD_TIMEOUT,5/20,5/g' /tmp/asterisk/third-party/Makefile.rules
 
 RUN cd /tmp/asterisk && \
-    ./configure --with-pjproject-bundled PJPROJECT_URL=http://developer.mobilon.ru/pjproject2 NOISY_BUILD=yes
+    ./configure --with-pjproject-bundled 
+
+### PJPROJECT_URL=http://developer.mobilon.ru/pjproject2 NOISY_BUILD=yes
 
 RUN cd /tmp/asterisk && \
     make menuselect.makeopts && \
