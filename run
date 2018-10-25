@@ -1,4 +1,0 @@
-docker run --name=test -it \
-    --net='host' \
-    --rm \
-    antirek/asterisk13-lua bash

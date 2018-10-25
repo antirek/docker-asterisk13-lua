@@ -1,10 +1,10 @@
 # Asterisk with Lua support
-# 
-# VERSION 0.0.2
+#
+# VERSION 18.09.1
 #
 # Contain
-#  - Asterisk 13
-#  - Lua 5.1
+#  - Asterisk 13.23.1
+#  - Lua 5.2
 #  - LuaRocks
 #  - mongodb driver & luamongo
 #  - g729
@@ -22,7 +22,7 @@ RUN apt-get check && \
         build-essential zip unzip libreadline-dev curl libncurses-dev mc aptitude \
         tcsh scons libpcre++-dev libboost-dev libboost-all-dev libreadline-dev \
         libboost-program-options-dev libboost-thread-dev libboost-filesystem-dev \
-        libboost-date-time-dev gcc g++ git lua5.1-dev make libmongo-client-dev \
+        libboost-date-time-dev gcc g++ git make libmongo-client-dev \
         dh-autoreconf lame sox libzmq3-dev libzmqpp-dev libtiff-tools perl5 && \
     apt-get clean
 
@@ -31,19 +31,33 @@ RUN apt-get check && \
 
 RUN curl -sf \
         -o /tmp/asterisk.tar.gz \
-        -L http://downloads.asterisk.org/pub/telephony/asterisk/releases/asterisk-13.18.5.tar.gz && \
+        -L http://downloads.asterisk.org/pub/telephony/asterisk/releases/asterisk-13.23.1.tar.gz && \
     mkdir /tmp/asterisk && \
     tar -xzf /tmp/asterisk.tar.gz -C /tmp/asterisk --strip-components=1 && \
     cd /tmp/asterisk && \
     contrib/scripts/install_prereq install
 
+
+RUN cat /tmp/asterisk/third-party/Makefile.rules
+
+RUN sed -i 's/DOWNLOAD_TIMEOUT,5/20,5/g' /tmp/asterisk/third-party/Makefile.rules
+
+RUN cat /tmp/asterisk/third-party/Makefile.rules
+
 RUN cd /tmp/asterisk && \
-    ./configure --with-pjproject-bundled
+    ./configure --with-pjproject-bundled PJPROJECT_URL=http://developer.mobilon.ru/pjproject2 NOISY_BUILD=yes
 
 RUN cd /tmp/asterisk && \
     make menuselect.makeopts && \
     menuselect/menuselect \
         --disable BUILD_NATIVE \
+        --enable DONT_OPTIMIZE \
+        --enable COMPILE_DOUBLE \
+        --enable DEBUG_THREADS \
+        --enable BETTER_BACKTRACES \
+        --enable res_endpoint_stats \
+        --enable res_chan_stats \
+        --enable res_pjsip_registrar_expire \
         --enable chan_pjsip \
         menuselect.makeopts && \
     make && make install && \
@@ -52,10 +66,12 @@ RUN cd /tmp/asterisk && \
 
 ## Lua
 
-ENV LUA_HASH 2e115fe26e435e33b0d5c022e4490567
-ENV LUA_MAJOR_VERSION 5.1
-ENV LUA_MINOR_VERSION 5
+ENV LUA_HASH 913fdb32207046b273fdb17aad70be13
+ENV LUA_MAJOR_VERSION 5.2
+ENV LUA_MINOR_VERSION 4
 ENV LUA_VERSION ${LUA_MAJOR_VERSION}.${LUA_MINOR_VERSION}
+
+RUN apt-get install -y curl
 
 RUN mkdir /tmp/lua && \
     cd /tmp/lua && \
@@ -76,48 +92,44 @@ RUN mkdir /tmp/mongo-cxx-driver && \
     cd /tmp/mongo-cxx-driver && \
     scons --prefix=/usr --full --use-system-boost install-mongoclient
 
-
 RUN mkdir /tmp/luamongo && \
     curl -sf -o /tmp/luamongo.tar.gz -L https://github.com/moai/luamongo/archive/v0.4.5.tar.gz && \
     tar -zxf /tmp/luamongo.tar.gz -C /tmp/luamongo --strip-components=1 && \
     cd /tmp/luamongo && \
-    make Linux LUAPKG=lua5.1 && \
-    cp /tmp/luamongo/mongo.so /usr/local/lib/lua/5.1/mongo.so
+    make Linux LUAPKG=lua5.2 && \
+    cp /tmp/luamongo/mongo.so /usr/local/lib/lua/5.2/mongo.so
 
 
 ## Install luarocks
 
 RUN mkdir /tmp/luarocks && \
-    curl -sf -o /tmp/luarocks.tar.gz -L http://luarocks.org/releases/luarocks-2.4.3.tar.gz && \
+    curl -sf -o /tmp/luarocks.tar.gz -L http://luarocks.org/releases/luarocks-2.4.4.tar.gz && \
     tar -zxf /tmp/luarocks.tar.gz -C /tmp/luarocks --strip-components=1 && \
     cd /tmp/luarocks && \
     ./configure && \
     make bootstrap
 
-
-## Install luasec
-
-RUN git clone https://github.com/antirek/luasec.git /tmp/luasec && \
-    cd /tmp/luasec && \
-    luarocks install luasec-0.6-1.rockspec
-
 ## Install rocks
 
-RUN luarocks install luasocket && \
-    luarocks install inspect && \
-    luarocks install redis-lua && \
-    luarocks install luafilesystem && \
-    luarocks install sendmail && \
-    luarocks install lzmq && \
-    luarocks install json-lua && \
-    luarocks install lua-cjson && \
-    luarocks install busted && \
-    luarocks install luacov && \
-    luarocks install uuid && \
-    luarocks install moses && \
-    luarocks install luacrypto && \
-    luarocks install httpclient && \
-    luarocks install lualogging
+RUN luarocks install luasocket 3.0rc1 && \
+    luarocks install luasec 0.7 && \
+    luarocks install inspect 3.0 && \
+    luarocks install redis-lua 2.0.4 && \
+    luarocks install luafilesystem 1.7.0 && \
+    luarocks install sendmail 0.1.5 && \
+    luarocks install lzmq 0.4.4 && \
+    luarocks install json-lua 0.1 && \
+    luarocks install lua-cjson 2.1.0.6 && \
+    luarocks install busted 2.0.rc12 && \
+    luarocks install luacov 0.13.0 && \
+    luarocks install uuid 0.2 && \
+    luarocks install moses 1.6.1 && \
+    luarocks install luacrypto 0.3.2 && \
+    luarocks install httpclient 0.1.0 && \
+    luarocks install lualogging 1.3.0 && \
+    luarocks install luchia 1.1.2 && \
+    luarocks install statsd 3.0.2
+
 
 ## g729
 
@@ -146,15 +158,10 @@ RUN mkdir /usr/codecs && \
     curl -O http://asterisk.hosting.lv/bin/codec_g729-ast130-gcc4-glibc-x86_64-opteron-sse3.so && \
     curl -O http://asterisk.hosting.lv/bin/codec_g729-ast130-gcc4-glibc-x86_64-opteron.so && \
     curl -O http://asterisk.hosting.lv/bin/codec_g729-ast130-gcc4-glibc-x86_64-pentium4.so && \
-    curl -O http://asterisk.hosting.lv/bin/codec_g723-ast130-gcc4-glibc2.2-x86_64-barcelona.so && \
-    curl -O http://asterisk.hosting.lv/bin/codec_g723-ast130-gcc4-glibc2.2-x86_64-core2-sse4.so && \
-    curl -O http://asterisk.hosting.lv/bin/codec_g723-ast130-gcc4-glibc2.2-x86_64-core2.so && \
-    curl -O http://asterisk.hosting.lv/bin/codec_g723-ast130-gcc4-glibc2.2-x86_64-opteron-sse3.so && \
-    curl -O http://asterisk.hosting.lv/bin/codec_g723-ast130-gcc4-glibc2.2-x86_64-opteron.so && \
-    curl -O http://asterisk.hosting.lv/bin/codec_g723-ast130-gcc4-glibc2.2-x86_64-pentium4.so && \
     curl -O http://asterisk.hosting.lv/bin/codec_g729-ast130-gcc4-glibc2.2-x86_64-barcelona.so && \
     curl -O http://asterisk.hosting.lv/bin/codec_g729-ast130-gcc4-glibc2.2-x86_64-core2-sse4.so && \
     curl -O http://asterisk.hosting.lv/bin/codec_g729-ast130-gcc4-glibc2.2-x86_64-core2.so && \
     curl -O http://asterisk.hosting.lv/bin/codec_g729-ast130-gcc4-glibc2.2-x86_64-opteron-sse3.so && \
     curl -O http://asterisk.hosting.lv/bin/codec_g729-ast130-gcc4-glibc2.2-x86_64-opteron.so && \
     curl -O http://asterisk.hosting.lv/bin/codec_g729-ast130-gcc4-glibc2.2-x86_64-pentium4.so
+
